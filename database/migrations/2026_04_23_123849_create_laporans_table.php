@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('laporans', function (Blueprint $table) {
             $table->id();
+            $table->string('judul');
+            $table->date('tanggal_mulai');
+            $table->date('tanggal_selesai');
+            $table->integer('total_transaksi')->default(0);
+            $table->integer('total_pendapatan')->default(0);
+            $table->text('keterangan')->nullable();
             $table->timestamps();
         });
     }

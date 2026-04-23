@@ -7,59 +7,38 @@ use Illuminate\Http\Request;
 
 class LaporanController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
+   
+    public function index() {
+        $laporans = Laporan::latest()->paginate(10);
+        return view('laporans.index', compact('laporans'));
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+    public function create() {
+        return view('laporans.create');
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
+    public function store(Request $request) {
+        $request->validate([
+            'judul'           => 'required|string',
+            'tanggal_mulai'   => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+        ]);
+        $total = Transaksi::whereBetween('created_at', [
+            $request->tanggal_mulai,
+            $request->tanggal_selesai
+        ])->where('status','selesai');
+        Laporan::create([
+            'judul'            => $request->judul,
+            'tanggal_mulai'    => $request->tanggal_mulai,
+            'tanggal_selesai'  => $request->tanggal_selesai,
+            'total_transaksi'  => $total->count(),
+            'total_pendapatan' => $total->sum('total_harga'),
+            'keterangan'       => $request->keterangan,
+        ]);
+    return redirect()->route('laporans.index')
+        ->with('success', 'Laporan berhasil dibuat!');
     }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Laporan $laporan)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Laporan $laporan)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Laporan $laporan)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Laporan $laporan)
-    {
-        //
+    public function destroy(Laporan $laporan) {
+        $laporan->delete();
+        return redirect()->route('laporans.index')
+            ->with('success', 'Laporan dihapus!');
     }
 }
