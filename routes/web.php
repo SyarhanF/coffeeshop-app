@@ -13,4 +13,8 @@ Route::resource('produks', ProdukController::class);
 Route::resource('transaksis', TransaksiController::class);
 Route::resource('laporans', LaporanController::class);
 
+use App\Http\Controllers\TransaksiController;
+
+Route::resource('transaksis', TransaksiController::class);
+
 

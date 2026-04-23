@@ -2,64 +2,52 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Produk;
 use App\Models\Transaksi;
 use Illuminate\Http\Request;
 
 class TransaksiController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
+    public function index() {
+        $transaksis = Transaksi::with('user')
+            ->latest()->paginate(10);
+        return view('transaksis.index', compact('transaksis'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+    public function create() {
+        $produks = Produk::where('stok', '>', 0)->get();
+        return view('transaksis.create', compact('produks'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
+    public function store(Request $request) {
+        $request->validate([
+            'produk_ids' => 'required|array',
+            'qtys'       => 'required|array',
+            'bayar'      => 'required|integer',
+        ]);
+
+        $total = 0;
+        foreach($request->produk_ids as $i => $pid) {
+            $p = Produk::find($pid);
+            $total += $p->harga * $request->qtys[$i];
+        }
+
+        $transaksi = Transaksi::create([
+            'kode_transaksi' => 'TRX-'.date('Ymd').'-'.rand(1000,9999),
+            'user_id'        => auth()->id() ?? 1,
+            'total_harga'    => $total,
+            'bayar'          => $request->bayar,
+            'kembalian'      => $request->bayar - $total,
+            'status'         => 'selesai',
+        ]);
+
+        return redirect()->route('transaksis.index')
+            ->with('success', 'Transaksi berhasil disimpan!');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Transaksi $transaksi)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Transaksi $transaksi)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Transaksi $transaksi)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Transaksi $transaksi)
-    {
-        //
+    public function destroy(Transaksi $transaksi) {
+        $transaksi->update(['status' => 'batal']);
+        return redirect()->route('transaksis.index')
+            ->with('success', 'Transaksi dibatalkan!');
     }
 }
